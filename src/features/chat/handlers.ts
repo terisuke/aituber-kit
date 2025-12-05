@@ -14,9 +14,21 @@ import { generateMessageId } from '@/utils/messageUtils'
 import { isMultiModalAvailable } from '@/features/constants/aiModels'
 import { searchRAG } from '@/features/rag'
 import { detectIntent } from '@/features/robot'
+import { SpeakQueue } from '@/features/messages/speakQueue'
 
 // セッションIDを生成する関数
 const generateSessionId = () => generateMessageId()
+
+// LLM URLからOllamaベースURLを抽出（/api, /v1, /chat等のパスを除去）
+const extractOllamaBaseUrl = (llmUrl: string): string => {
+  try {
+    const url = new URL(llmUrl)
+    return `${url.protocol}//${url.host}`
+  } catch {
+    // URLパースに失敗した場合はデフォルトを返す
+    return 'http://localhost:11434'
+  }
+}
 
 // コードブロックのデリミネーター
 const CODE_DELIMITER = '```'
@@ -718,6 +730,9 @@ export const handleSendChatFn = () => async (text: string) => {
     const intentResult = detectIntent(newMessage)
 
     if (intentResult.intent === 'et_gokko') {
+      // 連続入力防止のため処理中フラグを設定
+      homeStore.setState({ chatProcessing: true })
+
       // ETごっこ専用の応答
       const etResponse =
         '[happy]いいよ！ETごっこしよう！[neutral]指を出してね！'
@@ -729,18 +744,46 @@ export const handleSendChatFn = () => async (text: string) => {
         timestamp: timestamp,
       })
 
-      // ロボットトリガーAPIを呼び出し（非同期）
+      // ロボットトリガーAPIを呼び出し（非同期、エラー時はユーザー通知）
       fetch('/api/robot/trigger', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'finger_touch' }),
       })
         .then((res) => res.json())
-        .then((data) => console.log('Robot trigger result:', data))
-        .catch((err) => console.error('Robot trigger error:', err))
+        .then((data) => {
+          console.log('Robot trigger result:', data)
+          if (!data.success) {
+            toastStore.getState().addToast({
+              message: 'ロボット制御に失敗しました',
+              type: 'error',
+            })
+          }
+        })
+        .catch((err) => {
+          console.error('Robot trigger error:', err)
+          toastStore
+            .getState()
+            .addToast({ message: 'ロボット接続エラー', type: 'error' })
+        })
+
+      // 音声再生完了を待つPromiseを作成
+      const speechCompletionPromise = new Promise<void>((resolve) => {
+        const callback = () => {
+          SpeakQueue.removeSpeakCompletionCallback(callback)
+          resolve()
+        }
+        SpeakQueue.onSpeakCompletion(callback)
+      })
 
       // AIキャラの応答を直接返す（LLMをスキップ）
       await speakMessageHandler(etResponse)
+
+      // 音声再生が完了するまで待機
+      await speechCompletionPromise
+
+      // 処理完了後にフラグをリセット
+      homeStore.setState({ chatProcessing: false })
       return
     }
 
@@ -791,8 +834,7 @@ export const handleSendChatFn = () => async (text: string) => {
       try {
         console.log('RAG search enabled, searching for:', newMessage)
         const ragContext = await searchRAG(newMessage, {
-          ollamaUrl:
-            ss.localLlmUrl.replace('/api', '') || 'http://localhost:11434',
+          ollamaUrl: extractOllamaBaseUrl(ss.localLlmUrl),
           embeddingModel: ss.ragEmbeddingModel,
           chromaUrl: ss.ragChromaUrl,
           collectionName: ss.ragCollectionName,

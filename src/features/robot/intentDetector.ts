@@ -15,10 +15,11 @@ export interface IntentResult {
 }
 
 export function detectIntent(message: string): IntentResult {
-  const normalizedMessage = message.toLowerCase().replace(/\s+/g, '')
+  // 半角スペースと全角スペース（U+3000）の両方を除去
+  const normalizedMessage = message.toLowerCase().replace(/[\s\u3000]+/g, '')
 
   for (const keyword of ET_TRIGGER_KEYWORDS) {
-    const normalizedKeyword = keyword.toLowerCase().replace(/\s+/g, '')
+    const normalizedKeyword = keyword.toLowerCase().replace(/[\s\u3000]+/g, '')
     if (normalizedMessage.includes(normalizedKeyword)) {
       return {
         intent: 'et_gokko',
