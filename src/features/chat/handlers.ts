@@ -13,6 +13,7 @@ import toastStore from '@/features/stores/toast'
 import { generateMessageId } from '@/utils/messageUtils'
 import { isMultiModalAvailable } from '@/features/constants/aiModels'
 import { searchRAG } from '@/features/rag'
+import { detectIntent } from '@/features/robot'
 
 // セッションIDを生成する関数
 const generateSessionId = () => generateMessageId()
@@ -713,6 +714,36 @@ export const handleSendChatFn = () => async (text: string) => {
       })
     }
   } else {
+    // インテント検出（ETごっこ判定）
+    const intentResult = detectIntent(newMessage)
+
+    if (intentResult.intent === 'et_gokko') {
+      // ETごっこ専用の応答
+      const etResponse =
+        '[happy]いいよ！ETごっこしよう！[neutral]指を出してね！'
+
+      // ユーザーメッセージをチャットログに追加
+      homeStore.getState().upsertMessage({
+        role: 'user',
+        content: newMessage,
+        timestamp: timestamp,
+      })
+
+      // ロボットトリガーAPIを呼び出し（非同期）
+      fetch('/api/robot/trigger', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'finger_touch' }),
+      })
+        .then((res) => res.json())
+        .then((data) => console.log('Robot trigger result:', data))
+        .catch((err) => console.error('Robot trigger error:', err))
+
+      // AIキャラの応答を直接返す（LLMをスキップ）
+      await speakMessageHandler(etResponse)
+      return
+    }
+
     let systemPrompt = ss.systemPrompt
     if (ss.slideMode) {
       if (sls.isPlaying) {
