@@ -55,6 +55,12 @@ export const useModelProviderState = () => {
     (s) => s.customApiIncludeMimeType
   )
 
+  // RAG settings
+  const enableRAG = settingsStore((s) => s.enableRAG)
+  const ragEmbeddingModel = settingsStore((s) => s.ragEmbeddingModel)
+  const ragChromaUrl = settingsStore((s) => s.ragChromaUrl)
+  const ragCollectionName = settingsStore((s) => s.ragCollectionName)
+
   const isMultiModalSupported = useMemo(
     () =>
       isMultiModalModelWithToggle(
@@ -109,5 +115,10 @@ export const useModelProviderState = () => {
     includeSystemMessagesInCustomApi,
     customApiIncludeMimeType,
     isMultiModalSupported,
+    // RAG settings
+    enableRAG,
+    ragEmbeddingModel,
+    ragChromaUrl,
+    ragCollectionName,
   }
 }

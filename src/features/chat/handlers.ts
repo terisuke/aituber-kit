@@ -12,6 +12,7 @@ import i18next from 'i18next'
 import toastStore from '@/features/stores/toast'
 import { generateMessageId } from '@/utils/messageUtils'
 import { isMultiModalAvailable } from '@/features/constants/aiModels'
+import { searchRAG } from '@/features/rag'
 
 // セッションIDを生成する関数
 const generateSessionId = () => generateMessageId()
@@ -753,6 +754,30 @@ export const handleSendChatFn = () => async (text: string) => {
     }
 
     homeStore.setState({ chatProcessing: true })
+
+    // RAG検索処理
+    if (ss.enableRAG) {
+      try {
+        console.log('RAG search enabled, searching for:', newMessage)
+        const ragContext = await searchRAG(newMessage, {
+          ollamaUrl:
+            ss.localLlmUrl.replace('/api', '') || 'http://localhost:11434',
+          embeddingModel: ss.ragEmbeddingModel,
+          chromaUrl: ss.ragChromaUrl,
+          collectionName: ss.ragCollectionName,
+        })
+        if (ragContext) {
+          console.log(
+            'RAG context found:',
+            ragContext.substring(0, 100) + '...'
+          )
+          systemPrompt += `\n\n【参考情報】\n${ragContext}`
+        }
+      } catch (error) {
+        console.error('RAG search failed:', error)
+        // RAG検索に失敗しても会話は継続
+      }
+    }
 
     // マルチモーダル対応チェック
     if (

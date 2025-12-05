@@ -218,12 +218,20 @@ interface ModelType {
   modelType: 'vrm' | 'live2d'
 }
 
+interface RAGSettings {
+  enableRAG: boolean
+  ragEmbeddingModel: string
+  ragChromaUrl: string
+  ragCollectionName: string
+}
+
 export type SettingsState = APIKeys &
   ModelProvider &
   Integrations &
   Character &
   General &
-  ModelType
+  ModelType &
+  RAGSettings
 
 // Function to get initial values from environment variables
 const getInitialValuesFromEnv = (): SettingsState => ({
@@ -538,6 +546,15 @@ const getInitialValuesFromEnv = (): SettingsState => ({
   angryMotionGroup: process.env.NEXT_PUBLIC_ANGRY_MOTION_GROUP || '',
   relaxedMotionGroup: process.env.NEXT_PUBLIC_RELAXED_MOTION_GROUP || '',
   surprisedMotionGroup: process.env.NEXT_PUBLIC_SURPRISED_MOTION_GROUP || '',
+
+  // RAG settings
+  enableRAG: process.env.NEXT_PUBLIC_ENABLE_RAG === 'true',
+  ragEmbeddingModel:
+    process.env.NEXT_PUBLIC_RAG_EMBEDDING_MODEL || 'nomic-embed-text',
+  ragChromaUrl:
+    process.env.NEXT_PUBLIC_RAG_CHROMA_URL || 'http://localhost:8000',
+  ragCollectionName:
+    process.env.NEXT_PUBLIC_RAG_COLLECTION_NAME || 'aituber_knowledge',
 })
 
 const settingsStore = create<SettingsState>()(
@@ -710,6 +727,11 @@ const settingsStore = create<SettingsState>()(
       enableMultiModal: state.enableMultiModal,
       colorTheme: state.colorTheme,
       customModel: state.customModel,
+      // RAG settings
+      enableRAG: state.enableRAG,
+      ragEmbeddingModel: state.ragEmbeddingModel,
+      ragChromaUrl: state.ragChromaUrl,
+      ragCollectionName: state.ragCollectionName,
     }),
   })
 )

@@ -439,5 +439,11 @@
   "BottomLayer": "最背面",
   "MostVisible": "最も見える",
   "LeastVisible": "最も見えない",
-  "Presets": "プリセット"
+  "Presets": "プリセット",
+  "RAGSettings": "RAG設定",
+  "EnableRAG": "RAG機能を利用する",
+  "RAGEmbeddingModel": "Embeddingモデル",
+  "RAGEmbeddingModelDescription": "RAG検索に使用するEmbeddingモデルを指定します。例: nomic-embed-text, embeddinggemma",
+  "RAGChromaURL": "ChromaDB URL",
+  "RAGCollectionName": "コレクション名"
 }

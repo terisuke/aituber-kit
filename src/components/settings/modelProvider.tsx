@@ -384,6 +384,74 @@ const ModelProvider = () => {
             </div>
           </div>
 
+          {/* RAG Settings */}
+          <div className="my-6 pt-4 border-t border-gray-200">
+            <div className="my-4 text-xl font-bold">{t('RAGSettings')}</div>
+            <div className="my-4">
+              <div className="my-2 text-sm font-medium">{t('EnableRAG')}</div>
+              <TextButton
+                onClick={() =>
+                  settingsStore.setState({ enableRAG: !state.enableRAG })
+                }
+              >
+                {state.enableRAG ? t('StatusOn') : t('StatusOff')}
+              </TextButton>
+            </div>
+            {state.enableRAG && (
+              <>
+                <div className="my-4">
+                  <div className="my-2 text-sm font-medium">
+                    {t('RAGEmbeddingModel')}
+                  </div>
+                  <div className="my-1 text-xs text-gray-500">
+                    {t('RAGEmbeddingModelDescription')}
+                  </div>
+                  <input
+                    className="text-ellipsis px-4 py-2 w-full bg-white hover:bg-white-hover rounded-lg"
+                    type="text"
+                    placeholder="nomic-embed-text"
+                    value={state.ragEmbeddingModel}
+                    onChange={(e) =>
+                      settingsStore.setState({
+                        ragEmbeddingModel: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <div className="my-4">
+                  <div className="my-2 text-sm font-medium">
+                    {t('RAGChromaURL')}
+                  </div>
+                  <input
+                    className="text-ellipsis px-4 py-2 w-full bg-white hover:bg-white-hover rounded-lg"
+                    type="text"
+                    placeholder="http://localhost:8000"
+                    value={state.ragChromaUrl}
+                    onChange={(e) =>
+                      settingsStore.setState({ ragChromaUrl: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="my-4">
+                  <div className="my-2 text-sm font-medium">
+                    {t('RAGCollectionName')}
+                  </div>
+                  <input
+                    className="text-ellipsis px-4 py-2 w-full bg-white hover:bg-white-hover rounded-lg"
+                    type="text"
+                    placeholder="aituber_knowledge"
+                    value={state.ragCollectionName}
+                    onChange={(e) =>
+                      settingsStore.setState({
+                        ragCollectionName: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+              </>
+            )}
+          </div>
+
           {!state.realtimeAPIMode &&
             !state.audioMode &&
             state.selectAIService !== 'custom-api' && (
