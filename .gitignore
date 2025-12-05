@@ -72,3 +72,5 @@ public/scripts/*
 
 .claude/settings.local.json
 
+# Serena cache
+.serena/
