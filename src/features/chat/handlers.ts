@@ -733,9 +733,9 @@ export const handleSendChatFn = () => async (text: string) => {
       // 連続入力防止のため処理中フラグを設定
       homeStore.setState({ chatProcessing: true })
 
-      // ETごっこ専用の応答
+      // ETごっこ専用の応答（テレオペレーション開始）
       const etResponse =
-        '[happy]いいよ！ETごっこしよう！[neutral]指を出してね！'
+        '[happy]いいよ！テレオペレーションを開始するね！[neutral]ロボットアームを操作できるよ！'
 
       // ユーザーメッセージをチャットログに追加
       homeStore.getState().upsertMessage({
@@ -744,24 +744,29 @@ export const handleSendChatFn = () => async (text: string) => {
         timestamp: timestamp,
       })
 
-      // ロボットトリガーAPIを呼び出し（非同期、エラー時はユーザー通知）
+      // テレオペレーション開始APIを呼び出し（非同期、エラー時はユーザー通知）
       fetch('/api/robot/trigger', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'finger_touch' }),
+        body: JSON.stringify({ action: 'teleop_start' }),
       })
         .then((res) => res.json())
         .then((data) => {
-          console.log('Robot trigger result:', data)
+          console.log('Teleoperation start result:', data)
           if (!data.success) {
             toastStore.getState().addToast({
-              message: 'ロボット制御に失敗しました',
+              message: `テレオペレーション開始失敗: ${data.message}`,
               type: 'error',
+            })
+          } else {
+            toastStore.getState().addToast({
+              message: 'テレオペレーション開始しました',
+              type: 'success',
             })
           }
         })
         .catch((err) => {
-          console.error('Robot trigger error:', err)
+          console.error('Teleoperation start error:', err)
           toastStore
             .getState()
             .addToast({ message: 'ロボット接続エラー', type: 'error' })
@@ -778,6 +783,69 @@ export const handleSendChatFn = () => async (text: string) => {
 
       // AIキャラの応答を直接返す（LLMをスキップ）
       await speakMessageHandler(etResponse)
+
+      // 音声再生が完了するまで待機
+      await speechCompletionPromise
+
+      // 処理完了後にフラグをリセット
+      homeStore.setState({ chatProcessing: false })
+      return
+    }
+
+    if (intentResult.intent === 'teleop_stop') {
+      // 連続入力防止のため処理中フラグを設定
+      homeStore.setState({ chatProcessing: true })
+
+      // テレオペレーション停止の応答
+      const stopResponse =
+        '[neutral]テレオペレーションを停止するね！[happy]お疲れ様！'
+
+      // ユーザーメッセージをチャットログに追加
+      homeStore.getState().upsertMessage({
+        role: 'user',
+        content: newMessage,
+        timestamp: timestamp,
+      })
+
+      // テレオペレーション停止APIを呼び出し
+      fetch('/api/robot/trigger', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'teleop_stop' }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          console.log('Teleoperation stop result:', data)
+          if (!data.success) {
+            toastStore.getState().addToast({
+              message: `テレオペレーション停止失敗: ${data.message}`,
+              type: 'error',
+            })
+          } else {
+            toastStore.getState().addToast({
+              message: 'テレオペレーション停止しました',
+              type: 'success',
+            })
+          }
+        })
+        .catch((err) => {
+          console.error('Teleoperation stop error:', err)
+          toastStore
+            .getState()
+            .addToast({ message: 'ロボット接続エラー', type: 'error' })
+        })
+
+      // 音声再生完了を待つPromiseを作成
+      const speechCompletionPromise = new Promise<void>((resolve) => {
+        const callback = () => {
+          SpeakQueue.removeSpeakCompletionCallback(callback)
+          resolve()
+        }
+        SpeakQueue.onSpeakCompletion(callback)
+      })
+
+      // AIキャラの応答を直接返す（LLMをスキップ）
+      await speakMessageHandler(stopResponse)
 
       // 音声再生が完了するまで待機
       await speechCompletionPromise

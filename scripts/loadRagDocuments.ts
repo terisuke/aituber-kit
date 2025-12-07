@@ -2,10 +2,15 @@
  * RAGドキュメント登録スクリプト
  *
  * 使用方法:
- *   npx ts-node scripts/loadRagDocuments.ts [ディレクトリパス]
+ *   npm run rag:load [ディレクトリパス]
+ *   または
+ *   npx tsx scripts/loadRagDocuments.ts [ディレクトリパス]
  *
  * 例:
- *   npx ts-node scripts/loadRagDocuments.ts ./knowledge
+ *   npm run rag:load ./knowledge
+ *   npx tsx scripts/loadRagDocuments.ts ./knowledge
+ *
+ * 注意: ts-nodeはESモジュールエラーが発生するため、tsxを使用してください。
  *
  * 環境変数（オプション）:
  *   OLLAMA_URL - OllamaのURL（デフォルト: http://localhost:11434）

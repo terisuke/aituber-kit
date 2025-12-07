@@ -3,10 +3,20 @@ export interface LeRobotConfig {
   policyPath: string
 }
 
+export interface TeleopConfig {
+  condaEnv: string
+  lerobotPath: string
+  followerPort: string
+  followerId: string
+  leaderPort: string
+  leaderId: string
+}
+
 export interface TriggerResponse {
   success: boolean
   message: string
   taskId?: string
+  pid?: number
 }
 
 const DEFAULT_CONFIG: LeRobotConfig = {
@@ -65,5 +75,23 @@ export async function triggerFingerTouchMock(): Promise<TriggerResponse> {
     success: true,
     message: '[MOCK] Finger touch action completed',
     taskId: `mock-${Date.now()}`,
+  }
+}
+
+// テレオペレーション モック用（実機がないとき）
+export async function startTeleoperationMock(): Promise<TriggerResponse> {
+  console.log('[MOCK] LeRobot teleoperation started')
+  return {
+    success: true,
+    message: '[MOCK] Teleoperation started',
+    pid: 99999,
+  }
+}
+
+export async function stopTeleoperationMock(): Promise<TriggerResponse> {
+  console.log('[MOCK] LeRobot teleoperation stopped')
+  return {
+    success: true,
+    message: '[MOCK] Teleoperation stopped',
   }
 }

@@ -1,4 +1,13 @@
 export { detectIntent } from './intentDetector'
 export type { IntentResult } from './intentDetector'
-export { triggerFingerTouch, triggerFingerTouchMock } from './lerobotClient'
-export type { LeRobotConfig, TriggerResponse } from './lerobotClient'
+export {
+  triggerFingerTouch,
+  triggerFingerTouchMock,
+  startTeleoperationMock,
+  stopTeleoperationMock,
+} from './lerobotClient'
+export type {
+  LeRobotConfig,
+  TeleopConfig,
+  TriggerResponse,
+} from './lerobotClient'

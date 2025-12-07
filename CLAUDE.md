@@ -37,6 +37,19 @@ cp .env.example .env  # 環境変数を設定
 npm run rag:load ./knowledge  # knowledgeディレクトリ内のドキュメントをChromaDBに登録
 ```
 
+**前提条件**: RAG機能を使用するには、ChromaDBとOllamaが起動している必要があります。
+
+### Makeコマンド（推奨）
+
+```bash
+make dev       # ChromaDBを起動して開発サーバーを起動
+make stop      # 開発サーバーとChromaDBを停止
+make chromadb  # ChromaDBのみ起動
+make rag-load  # knowledgeディレクトリのドキュメントをChromaDBに登録
+make status    # サービスの状態を確認
+make help      # ヘルプを表示
+```
+
 ## アーキテクチャ
 
 ### 技術スタック
@@ -97,24 +110,47 @@ ChromaDB + Ollama Embeddingsを使用した知識検索機能です。
 - `OLLAMA_URL` - Ollama APIエンドポイント（サーバーサイド）
 - `OLLAMA_EMBEDDING_MODEL` - サーバーサイド用Embeddingモデル
 
+**セットアップ手順:**
+
+1. ChromaDBを起動: `make chromadb` または `docker run -d -p 8000:8000 --name chromadb chromadb/chroma`
+2. Ollamaでembeddingモデルを取得: `ollama pull nomic-embed-text`
+3. ドキュメントを登録: `make rag-load` または `npm run rag:load ./knowledge`
+4. UIでRAG機能を有効化（設定画面 > AI設定 > RAG機能を利用する: ON）
+
+**注意:** `ts-node`はESモジュールエラーが発生するため、`tsx`を使用してください。`npm run rag:load`は内部で`tsx`を使用します。
+
 ### LeRobot統合（ロボットアーム制御）
 
-LeRobotフレームワークと連携し、AIキャラクターがロボットアームを制御します。
+LeRobotフレームワークと連携し、AIキャラクターがロボットアームをテレオペレーションで制御します。
 
 **構成ファイル:**
 
-- `intentDetector.ts` - 「ETごっこ」等のキーワード検出
-- `lerobotClient.ts` - LeRobotサーバーとの通信（10秒タイムアウト付き）
+- `intentDetector.ts` - 「ETごっこ」等のキーワード検出（開始・停止）
+- `lerobotClient.ts` - LeRobotサーバーとの通信（モック含む）
+- `/src/lib/teleoperation.ts` - テレオペレーション管理（サーバーサイド専用）
 - `/src/pages/api/robot/trigger.ts` - ロボット制御APIエンドポイント
 
 **インテント検出キーワード:**
-`ETごっこ`, `etごっこ`, `イーティーごっこ`, `指タッチ`, `ロボットとタッチ`
+
+- 開始: `ETごっこ`, `etごっこ`, `イーティーごっこ`, `指タッチ`, `ロボットとタッチ`, `テレオペ開始`
+- 停止: `テレオペ停止`, `テレオペ終了`, `ロボット止めて`, `ロボットストップ`
 
 **環境変数:**
 
-- `LEROBOT_SERVER_URL` - LeRobot推論サーバーURL（デフォルト: http://localhost:8080）
-- `LEROBOT_POLICY_PATH` - ポリシーファイルパス
 - `LEROBOT_USE_MOCK` - モックモード（true: 実機なしでテスト可能）
+- `LEROBOT_CONDA_ENV` - conda環境名（デフォルト: lerobot）
+- `LEROBOT_PATH` - LeRobotのインストールパス
+- `LEROBOT_FOLLOWER_PORT` - フォロワーアームのシリアルポート
+- `LEROBOT_FOLLOWER_ID` - フォロワーアームのID
+- `LEROBOT_LEADER_PORT` - リーダーアームのシリアルポート
+- `LEROBOT_LEADER_ID` - リーダーアームのID
+
+**使用方法:**
+
+1. `LEROBOT_USE_MOCK=false`に設定
+2. conda環境と各種ポート設定を.envに記載
+3. AIキャラに「ETごっこ」と話しかけるとテレオペレーション開始
+4. 「テレオペ停止」と話しかけると停止
 
 ## 開発ガイドライン
 
